@@ -12,8 +12,27 @@
 
 The message `gps:info` includes a list of GPS positions. If recording GPS position in a higher rate than the sending rate is required, the GPS positions need to be stored and sent in one package.
 
+=== Use cases
 
-This format is used to report the GPS position of a CU or virtual CU independend of an attached machine. 
+==== Providing GPS Positions without a TaskController
+
+Without a TaskController, a CU or Virtual CU cannot provide a proper device description for using EFDI. To be able to provide GPS positions without such a TaskController, this gps:info-Format shall be used. 
+
+Different from EFDI, gps:info is assigned to the (Virtual) CU and this CU's routings are used to forward the message.
+
+==== Fleet management
+
+A fleet management system collects GPS positions from different sources (within or outside of agrirouter) and publishes these information to all fleet members. Using the Source_Devices List, a fleet management system can send collected gps information of many participants, marking which position belongs to which fleet member.
+
+++++
+<p align="center">
+<img src="./../../assets/images/general/gps_info_fleet.png" width="642px" height="182px">
+<br>
+<i>An example use case for gps:info with Source Devices</i>
+</p>
+++++
+
+
 
 
 === Command
@@ -27,13 +46,24 @@ This format is used to report the GPS position of a CU or virtual CU independend
 
 The corresponding protobuf message can be found here: https://github.com/DKE-Data/agrirouter-tmt-protobuf-definitions
 
-The message consists of a list of GPS positions. 
+The message consists of a list of GPS positions and - optionally - a list of GPS position sources. 
 
 [cols="1,3,3,4",options="header",]
 |================================================================================================
 |# |Name |Type |Description
 |1 |gps_entries |GPSList |A list of GPS positions.
+|2 |source_devices| SourceDevice | A list of associated source devices
 |================================================================================================
+
+
+*REMARK*
+====
+* The source_devices shall only be used, if gps positions of other members of the ecosystem shall be delivered 
+* The source_devices shall NOT be used, if a CU sends its own position.
+* The source_devices shall NOT be used to report the position of a machine attached to a CU
+====
+
+==== GPS Positions
 
 Each GPS position has the following parameters, that are equal to ISO11783-10 TimeLog entries and therefore also equal to EFDI GPS information; just without machine data.
 
@@ -49,7 +79,8 @@ Each GPS position has the following parameters, that are equal to ISO11783-10 Ti
 |6 |hdop |double |10^-1 Quality HDOP Quality information
 |7 |number_of_satellites |uint32 |Current number of satellites used to calculate this position
 |8 |gps_utc_timestamp |google.protobuf.Timestamp |Date and time of record
-|9 |field_status| FieldStatus | Current position status
+|9 |field_status| FieldStatus |Current position status
+|10 |source_device_index| uint32 |This index links to the SourceDevice.index in the list of source devices. 
 |================================================================================================
 
 The Position status can have one of the following values:
@@ -70,7 +101,7 @@ The Position status can have one of the following values:
 |15 |D_NOT_AVAILABLE |No GPS Receiver available
 |================================================================================================
 
-The Field status shall indicate, if a device is on a field, on the road or offroad.
+The field_status shall indicate, if a device is on a field, on the road or offroad.
 [cols="1,2,5",options="header",]
 |================================================================================================
 |# |Name |Description
@@ -84,6 +115,26 @@ The Field status shall indicate, if a device is on a field, on the road or offro
 *REMARK*
 ====
 FS_UNKNOWN should be the default value if there is no other status known for sure.
+====
+
+==== Source Devices
+
+The list of SourceDevices is optional(can be empty). It is used, if an agrirouter member - e.g. a fleet management system - reports GPS positions of other members in the process.
+
+[cols="1,3,3,4",options="header",]
+|================================================================================================
+|# |Name |Type |Description
+|1 |index |uint32 |The index identifier within the list
+|2 |display_name |string |A name to display on a map
+|3 |agrirouter_id |string |The endpoint id within agrirouter, corresponding to the endpoint_id of the link:../commands/ecosystem.adoc[List endpoints request]
+|4 |internal_id |string | A proprietary but  static id from within the sender system
+|================================================================================================
+
+
+*REMARK*
+====
+* If GPS position of a device outside agrirouter is reported, agrirouter_id shall be empty
+* index provides an index in a virtual list of devices - starting at 1. This list - or at least all members mentioned in any of the GPS Entries in this message - shall be reported with every message. 
 ====
 
 === Format
