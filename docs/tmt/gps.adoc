@@ -26,7 +26,7 @@ A fleet management system collects GPS positions from different sources (within 
 
 ++++
 <p align="center">
-<img src="./../../assets/images/general/gps_info_fleet.png" width="642px" height="182px">
+<img src="./../../assets/images/general/gps_info_fleet.png" width="90%" >
 <br>
 <i>An example use case for gps:info with Source Devices</i>
 </p>
